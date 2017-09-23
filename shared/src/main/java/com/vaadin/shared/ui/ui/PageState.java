@@ -16,6 +16,7 @@
 package com.vaadin.shared.ui.ui;
 
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * The shared state of a {@link com.vaadin.server.Page Page}.
@@ -35,4 +36,9 @@ public class PageState implements Serializable {
      * Non-null if the title is set. Null means Vaadin does not touch the title.
      */
     public String title = null;
+    
+    /**
+     * Data for the current state (if set with pushState)
+     */
+    public Map<String, String> data = null;
 }

@@ -195,11 +195,11 @@ public abstract class UI extends AbstractSingleComponentContainer
         }
 
         @Override
-        public void popstate(String uri) {
-            getPage().updateLocation(uri, true, true);
-
+        public void popstate(String uri, Object state) {
+            getPage().updateLocation(uri, state, true, true);
         }
     };
+    
     private DebugWindowServerRpc debugRpc = new DebugWindowServerRpc() {
         @Override
         public void showServerDebugInfo(Connector connector) {

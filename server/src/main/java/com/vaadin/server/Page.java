@@ -26,6 +26,7 @@ import java.util.EventObject;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import com.vaadin.annotations.HtmlImport;
 import com.vaadin.annotations.StyleSheet;
@@ -376,16 +377,24 @@ public class Page implements Serializable {
         private final String uri;
 
         /**
+         * The data for the new state
+         */
+        private Map<String, String> data;
+        
+        /**
          * Creates a new instance of PopstateEvent.
          *
          * @param source
          *            the Source of the event.
          * @param uri
          *            the new uri
+         * @param data
+         *            the data for the new state
          */
-        public PopStateEvent(Page source, String uri) {
+        public PopStateEvent(Page source, String uri, Map<String, String> data) {
             super(source);
             this.uri = uri;
+            this.data = data;
         }
 
         /**
@@ -405,6 +414,15 @@ public class Page implements Serializable {
         public String getUri() {
             return uri;
         }
+        
+        /**
+         * Get the new data
+         *
+         * @return the new data
+         */
+        public Map<String, String> getData() {
+			return data;
+		}
     }
 
     @FunctionalInterface
@@ -563,7 +581,9 @@ public class Page implements Serializable {
     private String windowName;
 
     private String newPushState;
+    private Map<String, String> newPushData;
     private String newReplaceState;
+    private Map<String, String> newReplaceData;
 
     private List<Dependency> pendingDependencies;
 
@@ -978,12 +998,20 @@ public class Page implements Serializable {
 
         if (newPushState != null) {
             target.addAttribute(UIConstants.ATTRIBUTE_PUSH_STATE, newPushState);
+            if (newPushData != null) {
+                target.addAttribute(UIConstants.ATTRIBUTE_PUSH_DATA, newPushData);
+            }
             newPushState = null;
+            newPushData = null;
         }
         if (newReplaceState != null) {
             target.addAttribute(UIConstants.ATTRIBUTE_REPLACE_STATE,
                     newReplaceState);
+            if (newReplaceData != null) {
+                target.addAttribute(UIConstants.ATTRIBUTE_REPLACE_DATA, newReplaceData);
+            }
             newReplaceState = null;
+            newReplaceData = null;
         }
 
         if (styles != null) {
@@ -1064,7 +1092,32 @@ public class Page implements Serializable {
      * @since 8.0
      */
     public void pushState(String uri) {
+    	pushState(null, uri);
+    }
+    
+    /**
+     * Updates the browsers URI without causing actual page change. This method
+     * is useful if you wish implement "deep linking" to your application.
+     * Calling the method also adds a new entry to clients browser history and
+     * you can further use {@link PopStateListener} to track the usage of
+     * back/forward feature in browser.
+     * <p>
+     * Note, the current implementation supports setting only one new uri in one
+     * user interaction.
+     *
+     * @param data
+     *            The data representing the <strong>upcoming</strong> application
+     *            state.
+     * @param uri
+     *            to be used for pushState operation. The URI is resolved over
+     *            the current location. If the given URI is absolute, it must be
+     *            of same origin as the current URI or the browser will not
+     *            accept the new value.
+     * @since 8.2
+     */
+    public void pushState(Map<String, String> data, String uri) {
         newPushState = uri;
+        newPushData = data;
         uI.markAsDirty();
         location = location.resolve(uri);
     }
@@ -1103,11 +1156,31 @@ public class Page implements Serializable {
      * @since 8.0
      */
     public void replaceState(String uri) {
+        replaceState(null, uri);
+    }
+
+    /**
+     * Updates the browsers URI without causing actual page change in the same
+     * way as {@link #pushState(String)}, but does not add new entry to browsers
+     * history.
+     *
+     * @param uri
+     *            the URI to be used for replaceState operation. The URI is
+     *            resolved over the current location. If the given URI is
+     *            absolute, it must be of same origin as the current URI or the
+     *            browser will not accept the new value.
+     * @param data
+     *            The state representing the <strong>upcoming</strong> 
+     *            application state.
+     * @since 8.2
+     */
+    public void replaceState(Map<String, String> data, String uri) {
         newReplaceState = uri;
+        newReplaceData = data;
         uI.markAsDirty();
         location = location.resolve(uri);
     }
-
+    
     /**
      * Updates the browsers URI without causing actual page change in the same
      * way as {@link #pushState(URI)}, but does not add new entry to browsers
@@ -1155,6 +1228,28 @@ public class Page implements Serializable {
      */
     public void updateLocation(String location, boolean fireEvents,
             boolean firePopstate) {
+        updateLocation(location, null, fireEvents, firePopstate);
+    }
+
+    
+    /**
+     * For internal use only. Used to update the server-side location when the
+     * client-side location changes.
+     *
+     * @since 8.0
+     *
+     * @param location
+     *            the new location URI
+     * @param state
+     * 			  the state (in the history object)
+     * @param fireEvents
+     *            whether to fire {@link UriFragmentChangedEvent} if the URI
+     *            fragment changes
+     * @param firePopstate
+     *            whether to fire {@link PopStateEvent}
+     */
+    public void updateLocation(String location, Object stateObject, boolean fireEvents,
+            boolean firePopstate) {
         try {
             String oldUriFragment = this.location.getFragment();
             this.location = new URI(location);
@@ -1164,7 +1259,11 @@ public class Page implements Serializable {
                 fireEvent(new UriFragmentChangedEvent(this, newUriFragment));
             }
             if (firePopstate) {
-                fireEvent(new PopStateEvent(this, location));
+            	Map<String, String> data = null;
+            	if (stateObject != null) {
+            		data = (Map<String, String>) stateObject;
+            	}
+                fireEvent(new PopStateEvent(this, location, data));
             }
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);

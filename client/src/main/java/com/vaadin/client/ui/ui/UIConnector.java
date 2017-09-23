@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import com.google.gwt.core.client.Scheduler;
@@ -250,7 +251,8 @@ public class UIConnector extends AbstractSingleComponentContainerConnector
         Browser.getWindow().setOnpopstate(evt -> {
             final String newLocation = Browser.getWindow().getLocation()
                     .toString();
-            getRpcProxy(UIServerRpc.class).popstate(newLocation);
+            Object state = Browser.getWindow().getHistory().getState();
+            getRpcProxy(UIServerRpc.class).popstate(newLocation, state);
             currentLocation = newLocation;
         });
         // IE doesn't fire popstate correctly with certain hash changes.
@@ -261,8 +263,9 @@ public class UIConnector extends AbstractSingleComponentContainerConnector
                         .toString();
                 if (!newLocation.equals(currentLocation)) {
                     currentLocation = newLocation;
+                    Object state = Browser.getWindow().getHistory().getState();
                     getRpcProxy(UIServerRpc.class).popstate(
-                            Browser.getWindow().getLocation().toString());
+                            Browser.getWindow().getLocation().toString(), state);
                 }
             });
             currentLocation = Browser.getWindow().getLocation().toString();
@@ -439,11 +442,13 @@ public class UIConnector extends AbstractSingleComponentContainerConnector
         }
 
         if (uidl.hasAttribute(UIConstants.ATTRIBUTE_PUSH_STATE)) {
-            Browser.getWindow().getHistory().pushState(null, "",
+        	Object data = uidl.getMapAttribute(UIConstants.ATTRIBUTE_PUSH_DATA);
+            Browser.getWindow().getHistory().pushState(data, "",
                     uidl.getStringAttribute(UIConstants.ATTRIBUTE_PUSH_STATE));
         }
         if (uidl.hasAttribute(UIConstants.ATTRIBUTE_REPLACE_STATE)) {
-            Browser.getWindow().getHistory().replaceState(null, "", uidl
+        	Object data = uidl.getMapAttribute(UIConstants.ATTRIBUTE_REPLACE_DATA);
+            Browser.getWindow().getHistory().replaceState(data, "", uidl
                     .getStringAttribute(UIConstants.ATTRIBUTE_REPLACE_STATE));
         }
 

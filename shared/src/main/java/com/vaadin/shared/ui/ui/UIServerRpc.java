@@ -36,6 +36,6 @@ public interface UIServerRpc extends ClickRpc, ServerRpc {
      */
     public void poll();
 
-    public void popstate(String uri);
+    public void popstate(String uri, Object state);
 
 }

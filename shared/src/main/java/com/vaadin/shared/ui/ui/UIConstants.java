@@ -29,10 +29,14 @@ public class UIConstants implements Serializable {
 
     @Deprecated
     public static final String ATTRIBUTE_PUSH_STATE = "ps";
-
+    @Deprecated
+    public static final String ATTRIBUTE_PUSH_DATA = "pd";
+    
     @Deprecated
     public static final String ATTRIBUTE_REPLACE_STATE = "rs";
-
+    @Deprecated
+    public static final String ATTRIBUTE_REPLACE_DATA = "rd";
+    
     @Deprecated
     public static final String ATTRIBUTE_NOTIFICATION_STYLE = "style";
     @Deprecated
